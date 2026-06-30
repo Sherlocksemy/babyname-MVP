@@ -1,0 +1,2 @@
+# Use Git LFS for the names database (over 100MB)
+quick-app/db/names.db filter=lfs diff=lfs merge=lfs -text

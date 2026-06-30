@@ -1,0 +1,1366 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>取名台 · 一字见心</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<script type="importmap">
+{ "imports": { "./traditional.js": "./traditional.js?v=mqx2df6p" } }
+</script>
+<link href="styles.css" rel="stylesheet" />
+</head>
+<body class="theme-ink">
+<div class="app-wrap">
+
+<!-- ===== Header ===== -->
+<header class="app-header">
+  <div class="app-brand">
+    <div class="seal">名</div>
+    <div>
+      <h1>取名台</h1>
+      <div class="sub">一字见心 · 以名为契</div>
+    </div>
+  </div>
+  <div class="theme-switcher">
+    <button class="theme-btn active" data-theme="ink">墨韵</button>
+    <button class="theme-btn" data-theme="celadon">青瓷</button>
+    <button class="theme-btn" data-theme="cinnabar">朱砂</button>
+  </div>
+</header>
+
+<!-- ===== Input Bar ===== -->
+<div class="input-bar">
+  <div class="input-row">
+    <div class="input-group">
+      <label for="surnameInput">姓氏</label>
+      <input class="field-input" id="surnameInput" value="陈" maxlength="2" />
+    </div>
+    <div class="input-group">
+      <label>性别</label>
+      <div class="gender-group" id="genderGroup">
+        <button class="gender-btn" data-gender="male">男</button>
+        <button class="gender-btn active" data-gender="female">女</button>
+        <button class="gender-btn" data-gender="neutral">不限</button>
+      </div>
+    </div>
+  </div>
+  <div class="input-row">
+    <div class="input-group" style="flex:1.2">
+      <label for="birthDate">公历</label>
+      <input class="field-input date-f" id="birthDate" type="date" />
+    </div>
+    <div class="input-group lunar-group" style="flex:1.5">
+      <label for="lunarYear">农历</label>
+      <div class="lunar-fields">
+        <select class="field-input lunar-y" id="lunarYear"></select>
+        <select class="field-input lunar-m" id="lunarMonth"></select>
+        <select class="field-input lunar-d" id="lunarDay"></select>
+        <label class="leap-label"><input type="checkbox" id="lunarLeap" />闰</label>
+      </div>
+    </div>
+  </div>
+  <div class="input-row">
+    <div class="input-group" style="flex:2.5">
+      <label for="birthTime">时辰</label>
+      <input class="field-input time-f" id="birthTime" type="time" value="09:30" />
+    </div>
+    <div class="input-group" style="flex:3">
+      <label for="locProvince">出生地</label>
+      <div class="loc-fields">
+        <select class="field-input loc-p" id="locProvince"><option value="">省/直辖市</option></select>
+        <select class="field-input loc-c" id="locCity"><option value="">城市</option></select>
+      </div>
+    </div>
+    
+    <button class="btn-generate" id="btnGenerate">开始取名</button>
+  </div>
+</div>
+
+<!-- ===== Birth Info ===== -->
+<div class="birth-banner" id="birthBanner"></div>
+
+<!-- ===== Results ===== -->
+<div class="results-section" id="resultsSection">
+    <div class="rs-header">
+    <div class="rs-header-top">
+      <h2 id="resultTitle">推荐名字</h2>
+      <span class="count" id="resultCount"></span>
+    </div>
+    <div class="rs-toolbar">
+      <select class="tb-btn" id="pageSize">
+        <option value="20">每页20条</option>
+        <option value="40" selected="">每页40条</option>
+        <option value="60">每页60条</option>
+        <option value="80">每页80条</option>
+        <option value="100">每页100条</option>
+      </select>
+      <select class="tb-btn" id="sortBy">
+        <option value="totalScore">综合总分</option>
+        <option value="bazi">八字喜用神</option>
+        <option value="yinyun">音韵声调</option>
+        <option value="culture">经典文化</option>
+        <option value="meaning">字义内涵</option>
+        <option value="gua">周易卦象</option>
+      </select>
+      <button class="tb-btn" id="btnOrder" title="切换排序方向">↕ 降序</button>
+      <button class="tb-btn" id="btnShuffle" title="换一批名字">🔄 换一批</button>
+      <button class="tb-btn" id="btnWeightToggle" title="调整权重">⚖️ 权重</button>
+    </div>
+  </div>
+  
+  <!-- Weight config panel -->
+  <div class="weight-panel" id="weightPanel" style="display:none">
+    <div style="font-size:13px;color:var(--ink-light);margin-bottom:8px">拖拽滑块调整各维度权重</div>
+    <div id="weightSliders"></div>
+    <div style="margin-top:12px;text-align:center">
+      <button class="btn-sm" id="btnWeightApply" style="border-color:var(--gold);color:var(--gold);padding:8px 28px">✔ 应用并开始取名</button>
+    </div>
+  </div>
+  <div class="loader active" id="loader">
+    <div class="spinner"></div>
+    <div>正在推演八字命理，生成佳名…</div>
+  </div>
+  <div class="name-grid" id="nameGrid"></div>
+  <div class="empty-state" id="emptyState" style="display:none">
+    <p>暂无推荐名字，试试调整筛选条件</p>
+  </div>
+  <!-- Pagination -->
+  <div class="pagination" id="pagination">
+    <button class="btn-page" id="firstPage">‹‹ 首页</button>
+    <button class="btn-page" id="prevPage">‹ 上一页</button>
+    <span class="page-info" id="pageInfo"></span>
+    <span class="page-jump">第 <input type="number" class="page-input" id="pageInput" value="1" min="1"> 页</span>
+    <button class="btn-page" id="nextPage">下一页 ›</button>
+    <button class="btn-page" id="lastPage">尾页 ››</button>
+  </div>
+</div>
+
+</div><!-- /app-wrap -->
+
+
+
+
+
+<!-- ===== Detail Overlay ===== -->
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-hd">
+      <button class="detail-close" data-close>&times;</button>
+      <div class="detail-name" id="detName"></div>
+      <div class="detail-meta" id="detMeta"></div>
+      <div class="detail-hd-actions" id="detActions"></div>
+    </div>
+    <div class="detail-body" id="detBody"></div>
+  </div>
+</div>
+
+<script type="module">
+import { calculateFullBazi, solarToLunar, lunarToSolar } from "./traditional.js";
+
+// ---- Province/City data ----
+const PROVINCE_CITIES = {
+  北京:["东城","西城","朝阳","海淀","丰台","石景山","通州","大兴","房山","顺义","昌平","门头沟","怀柔","平谷","密云","延庆"],
+  上海:["黄浦","徐汇","长宁","静安","普陀","虹口","杨浦","浦东","闵行","宝山","嘉定","金山","松江","青浦","奉贤","崇明"],
+  天津:["和平","河东","河西","南开","河北","红桥","东丽","西青","津南","北辰","武清","宝坻","滨海","宁河","静海","蓟州"],
+  重庆:["渝中","万州","涪陵","渝北","巴南","长寿","江津","合川","永川","南川","綦江","大足","璧山","铜梁","潼南","荣昌","开州","梁平","武隆","黔江","丰都","垫江","忠县","云阳","奉节","巫山","巫溪","石柱","秀山","酉阳","彭水"],
+  香港:["香港"],
+  澳门:["澳门"],
+  台湾:["台北","高雄","台中","台南","新北","桃园","基隆","新竹","嘉义"],
+  河北:["石家庄","唐山","秦皇岛","邯郸","邢台","保定","张家口","承德","沧州","廊坊","衡水"],
+  山西:["太原","大同","阳泉","长治","晋城","朔州","晋中","运城","忻州","临汾","吕梁"],
+  内蒙古:["呼和浩特","包头","乌海","赤峰","通辽","鄂尔多斯","呼伦贝尔","巴彦淖尔","乌兰察布","兴安盟","锡林郭勒盟","阿拉善盟"],
+  辽宁:["沈阳","大连","鞍山","抚顺","本溪","丹东","锦州","营口","阜新","辽阳","盘锦","铁岭","朝阳","葫芦岛"],
+  吉林:["长春","吉林","四平","辽源","通化","白山","松原","白城","延边"],
+  黑龙江:["哈尔滨","齐齐哈尔","鸡西","鹤岗","双鸭山","大庆","伊春","佳木斯","七台河","牡丹江","黑河","绥化","大兴安岭"],
+  江苏:["南京","无锡","徐州","常州","苏州","南通","连云港","淮安","盐城","扬州","镇江","泰州","宿迁"],
+  浙江:["杭州","宁波","温州","嘉兴","湖州","绍兴","金华","衢州","舟山","台州","丽水"],
+  安徽:["合肥","芜湖","蚌埠","淮南","马鞍山","淮北","铜陵","安庆","黄山","滁州","阜阳","宿州","六安","亳州","池州","宣城"],
+  福建:["福州","厦门","莆田","三明","泉州","漳州","南平","龙岩","宁德"],
+  江西:["南昌","景德镇","萍乡","九江","新余","鹰潭","赣州","吉安","宜春","抚州","上饶"],
+  山东:["济南","青岛","淄博","枣庄","东营","烟台","潍坊","济宁","泰安","威海","日照","临沂","德州","聊城","滨州","菏泽"],
+  河南:["郑州","开封","洛阳","平顶山","安阳","鹤壁","新乡","焦作","濮阳","许昌","漯河","三门峡","南阳","商丘","信阳","周口","驻马店","济源"],
+  湖北:["武汉","黄石","十堰","宜昌","襄阳","鄂州","荆门","孝感","荆州","黄冈","咸宁","随州","恩施","仙桃","潜江","天门","神农架"],
+  湖南:["长沙","株洲","湘潭","衡阳","邵阳","岳阳","常德","张家界","益阳","郴州","永州","怀化","娄底","湘西"],
+  广东:["广州","韶关","深圳","珠海","汕头","佛山","江门","湛江","茂名","肇庆","惠州","梅州","汕尾","河源","阳江","清远","东莞","中山","潮州","揭阳","云浮"],
+  广西:["南宁","柳州","桂林","梧州","北海","防城港","钦州","贵港","玉林","百色","贺州","河池","来宾","崇左"],
+  海南:["海口","三亚","三沙","儋州","五指山","琼海","文昌","万宁","东方","定安","屯昌","澄迈","临高","白沙","昌江","乐东","陵水","保亭","琼中"],
+  四川:["成都","自贡","攀枝花","泸州","德阳","绵阳","广元","遂宁","内江","乐山","南充","眉山","宜宾","广安","达州","雅安","巴中","资阳","阿坝","甘孜","凉山"],
+  贵州:["贵阳","六盘水","遵义","安顺","毕节","铜仁","黔西南","黔东南","黔南"],
+  云南:["昆明","曲靖","玉溪","保山","昭通","丽江","普洱","临沧","楚雄","红河","文山","西双版纳","大理","德宏","怒江","迪庆"],
+  西藏:["拉萨","日喀则","昌都","林芝","山南","那曲","阿里"],
+  陕西:["西安","铜川","宝鸡","咸阳","渭南","延安","汉中","榆林","安康","商洛"],
+  甘肃:["兰州","嘉峪关","金昌","白银","天水","武威","张掖","平凉","酒泉","庆阳","定西","陇南","临夏","甘南"],
+  青海:["西宁","海东","海北","黄南","海南","果洛","玉树","海西"],
+  宁夏:["银川","石嘴山","吴忠","固原","中卫"],
+  新疆:["乌鲁木齐","克拉玛依","吐鲁番","哈密","阿克苏","喀什","和田","昌吉","伊犁","塔城","阿勒泰","巴音郭楞","克孜勒苏","博尔塔拉"],
+};
+const PROVINCES = Object.keys(PROVINCE_CITIES);
+const MUNICIPALITIES = new Set(["香港","澳门"]);
+
+
+
+// ---- DOM refs ----
+const $ = (id) => document.getElementById(id);
+const surnameInput = $("surnameInput");
+const genderGroup = $("genderGroup");
+const birthDate = $("birthDate");
+const birthTime = $("birthTime");
+const birthBanner = $("birthBanner");
+const resultsSection = $("resultsSection");
+const resultTitle = $("resultTitle");
+const resultCount = $("resultCount");
+const loader = $("loader");
+const nameGrid = $("nameGrid");
+const emptyState = $("emptyState");
+const detailOverlay = $("detailOverlay");
+const detailPanel = $("detailPanel");
+const detName = $("detName");
+const detMeta = $("detMeta");
+const detActions = $("detActions");
+const detBody = $("detBody");
+
+// ---- State ----
+let lastItems = [];
+let currentPage = 1;
+let lastOptions = null;
+let excludedChars = JSON.parse(localStorage.getItem("babyname_excluded") || "[]");
+let favorites = JSON.parse(localStorage.getItem("babyname_favs") || "[]");
+
+// ---- Terminology explanations ----
+const EXPLAIN = {
+  "日主": "日主是八字中代表本人的天干，是命理分析的核心。比如日柱为「庚戌」，日主就是「庚」（属金），代表你自己。",
+  "身强": "身强指日主五行能量旺盛，代表体质好、抗压能力强、有主见。但过强则容易固执、冲动。",
+  "身弱": "身弱指日主五行能量偏弱，不代表身体不好，而是性格偏柔、善借力、适应性强。过弱则易缺乏主见。",
+  "喜用神": "喜用神是对你命局最有益的五行元素，取名优先选用此五行的字，可补益运势。",
+  "忌神": "忌神是对你命局不利的五行元素，取名应避开此五行的字，以免加剧命局失衡。",
+  "调候用神": "调候用神是最优先考虑的用神。根据出生季节气候来调节命局寒暖燥湿，比如夏生需水降温，冬生需火暖局。",
+  "扶抑用神": "扶抑用神是第二优先的用神。身强则抑制（用克泄耗），身弱则扶助（用生帮），让五行趋于平衡。",
+  "十神": "十神是八字中每个天干与日主的关系名称（正官、偏财、食神等），用于分析性格、事业、财运、人际关系。",
+  "正官": "正官代表正直守规矩、有责任感、适合稳定职业。正官为喜用时，做事有条理，受人尊重。",
+  "偏财": "偏财代表意外之财、投资经商天赋。偏财旺且为喜用时，常有不期而遇的赚钱机会。",
+  "正财": "正财代表稳定收入、正当职业之财。正财为喜用者，勤俭持家，收入稳定。",
+  "食神": "食神代表才华、口福、享乐。食神为喜用时，性格温和有才艺，懂生活情趣。",
+  "伤官": "伤官代表才华横溢、不拘一格。伤官为喜用者聪明有创意，但需注意言辞。",
+  "比肩": "比肩代表兄弟姐妹、朋友同事。比肩为喜用时，得朋友助力，人缘好。",
+  "劫财": "劫财也代表同辈友人，但竞争性更强。劫财旺者讲义气，但需注意合作中的利益分配。",
+  "正印": "正印代表长辈、学业、文凭。正印为喜用者，学业顺利，有贵人提携。",
+  "偏印": "偏印代表偏门学问、独特天赋。偏印旺者常有特殊才能，在艺术、玄学等领域有天赋。",
+  "七杀": "七杀代表魄力、冒险精神、权威。七杀为喜用时，有领导力、决断力；为忌则压力大、易冲突。",
+  "纳音": "纳音是年柱、月柱、日柱、时柱的五行属性补充，与中国传统文化中的音乐律吕有关，用于辅助分析命局特质。",
+  "大运": "大运是每十年一换的人生运势周期。名字与大运五行相生，有助于在对应年龄段顺风顺水。",
+  "声母": "声母是汉语拼音开头的辅音部分，如「张」(zhang)的声母是「zh」。名字中两个字声母不同更清晰响亮。",
+  "韵母": "韵母是汉语拼音中声母后面的部分。名字中两个字韵母不同，读起来更有变化感。",
+  "平仄": "平仄指声调的起伏变化。现代汉语中，一声二声为「平」，三声四声为「仄」。平仄搭配的名字读起来抑扬顿挫。",
+  "天干": "天干是十个符号（甲、乙、丙、丁、戊、己、庚、辛、壬、癸），代表时间、方位和五行能量。",
+  "地支": "地支是十二个符号（子、丑、寅、卯、辰、巳、午、未、申、酉、戌、亥），代表时辰、生肖和五行能量。",
+  "四柱": "四柱即年柱、月柱、日柱、时柱，每柱由一个天干和一个地支组成，共八个字，称为「八字」。",
+
+  "正官_short": "事业责任心，适合管理岗、体制内工作",
+  "偏财_short": "灵活求财，擅投资经商、异地机缘多",
+  "正财_short": "稳定收入，勤俭持家，收入来源正规",
+  "食神_short": "才华口才好，性格温和，懂生活情趣",
+  "伤官_short": "创意天赋强，不喜约束，言辞犀利",
+  "比肩_short": "同辈朋友多，有独立性但也存在竞争",
+  "劫财_short": "讲义气重情谊，合作需防利益分配",
+  "正印_short": "长辈贵人，学业顺利，适合稳定发展",
+  "偏印_short": "独特天赋，领悟力强，适合冷门专业",
+  "七杀_short": "魄力决断，有领导力，压力与机遇并存",
+  "本气": "本气是地支中最主要的力量，占总能量50%以上，代表显性环境和表面状态。",
+  "中气": "中气是地支中次要的潜藏力量，占总能量20-30%，代表过渡状态或辅助能量。",
+  "余气": "余气是地支中最弱的潜藏能量，占总能量10-20%，代表潜意识中的微小影响。",
+};
+
+// ---- Terminology explanation helper ----
+function explainTerm(term, map) {
+  if (!term) return "";
+  var text = String(term);
+  if (map && map[term]) {
+    var explanation = map[term];
+    return "<span class=\"explain-term\" title=\"点击查看解释\" data-explain=\"" + esc(explanation) + "\">" + esc(text) + "</span>";
+  }
+  return esc(text);
+}
+
+// ---- Helpers ----
+function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+function ml(v, kind) {
+  if (v == null) return "—";
+  if (kind === "popularity") {
+    if (v > 8000) return "常见";
+    if (v > 5000) return "适中";
+    return "少见";
+  }
+  return String(Math.round(v * 100) / 100);
+}
+
+function readOptions() {
+  const surname = surnameInput.value.trim() || "陈";
+  const genderBtn = genderGroup.querySelector(".gender-btn.active");
+  const gender = genderBtn ? genderBtn.dataset.gender : "female";
+  const bd = birthDate.value || "2024-06-27";
+  const bt = birthTime.value || "09:30";
+  const prov = document.getElementById("locProvince").value;
+  const city = document.getElementById("locCity").value;
+  const birthPlace = city ? (MUNICIPALITIES.has(prov) ? prov : city) : (prov || "");
+  return { surname, gender, birthDate: bd, birthTime: bt, birthPlace, source: "any", count: 200 };
+}
+
+function renderBS(o) {
+  if (!o) return;
+  try {
+    var cc = calculateFullBazi(o);
+    if (!cc) { birthBanner.classList.remove("active"); return; }
+    var pillarData = cc.pillarDetail || [];
+    var elementData = Object.entries(cc.elements || {});
+    var xi = cc.xiyong;
+    var labels = ["年","月","日","时"];
+    var stemMap = {"甲":"木","乙":"木","丙":"火","丁":"火","戊":"土","己":"土","庚":"金","辛":"金","壬":"水","癸":"水"};
+    var branchMap = {"子":"水","丑":"土","寅":"木","卯":"木","辰":"土","巳":"火","午":"火","未":"土","申":"金","酉":"金","戌":"土","亥":"水"};
+    var wxColors = {"木":"#4a9a5a","火":"#d44a3a","土":"#c4a44a","金":"#6a8aaa","水":"#4a7aba"};
+    var pillarHtml = pillarData.map(function(d, i) {
+      var stem = d.pillar[0], branch = d.pillar[1];
+      var sWx = stemMap[stem] || "";
+      var bWx = branchMap[branch] || "";
+      var sColor = wxColors[sWx] || "#888";
+      var bColor = wxColors[bWx] || "#888";
+      return '<div class="bz-pc"><div class="bz-pc-stem" style="background:' + sColor + '22;color:' + sColor + '">' + esc(stem) + '</div><div class="bz-pc-branch" style="background:' + bColor + '22;color:' + bColor + '">' + esc(branch) + '</div><div class="bz-pc-lb2">' + labels[i] + '柱</div></div>';
+    }).join("");
+    var elemHtml = elementData.map(function(e) {
+      var wx = e[0], count = e[1];
+      var color = wxColors[wx] || "#888";
+      return '<span class="bz-eb" style="color:' + color + '"><span class="bz-eb-wx" style="background:' + color + '18">' + wx + '</span><span class="bz-eb-c">' + count + '</span></span>';
+    }).join("");
+    var xiHtml = xi ? '<span class="bz-xy"><span class="bz-xy-l">喜用</span><span class="bz-xy-v" style="background:#d4e8da;color:#2a5a3a">' + esc(xi.xiYongElement) + '</span></span><span class="bz-xy"><span class="bz-xy-l">忌神</span><span class="bz-xy-v" style="background:#f0d4cc;color:#8a2a2a">' + esc(xi.jiShenElement) + '</span></span>' : '';
+    var lunarLabel = (cc.lunar && cc.lunar.label ? cc.lunar.label : "") + (cc.zodiac ? " \u00b7 \u5c5e" + cc.zodiac : "");
+    var timeNote = cc.solarTimeNote ? "\u00b7 " + esc(cc.solarTimeNote) : "";
+    birthBanner.innerHTML =
+      "<div class=\"bz-one-card\">" +
+        "<div class=\"bz-section bz-section-top\">" +
+          "<div class=\"bz-section-label\">&#128302; 八字四柱</div>" +
+          "<div class=\"bz-pillars\">" + pillarHtml + "</div>" +
+        "</div>" +
+        "<div class=\"bz-section\">" +
+          "<div class=\"bz-section-label\">&#9889; 五行能量</div>" +
+          "<div class=\"bz-body\"><span class=\"bz-body-l\">五行：</span>" + elemHtml + "</div>" +
+          "<div class=\"bz-body\" style=\"margin-top:4px\">" + xiHtml + "</div>" +
+        "</div>" +
+        "<div class=\"bz-section bz-section-bot\">" +
+          "<div class=\"bz-section-label\">&#128197; 出生信息</div>" +
+          "<div class=\"bz-body\">" + esc(lunarLabel) + " " + timeNote + "</div>" +
+        "</div>" +
+      "</div>";
+    birthBanner.classList.add("active");
+  } catch (e) { birthBanner.classList.remove("active"); }
+}function renderNames(items, o) {
+  resultTitle.textContent = o ? o.surname + "姓 · 推荐名字" : "推荐名字";
+  resultCount.textContent = "";
+  loader.classList.remove("active");
+  if (items.length === 0) {
+    nameGrid.innerHTML = "";
+    emptyState.style.display = "block";
+    return;
+  }
+  emptyState.style.display = "none";
+  var pageSize = Number(document.getElementById("pageSize").value) || 40;
+  var totalPages = Math.ceil(items.length / pageSize);
+  if (totalPages < 1) totalPages = 1;
+  var start = (currentPage - 1) * pageSize;
+  if (start >= items.length) { currentPage = 1; start = 0; totalPages = Math.ceil(items.length / pageSize); if (totalPages < 1) totalPages = 1; }
+  var pageItems = items.slice(start, start + pageSize);
+  document.getElementById("pageInfo").textContent = "第" + currentPage + "/" + totalPages + "页，共" + items.length + "个";
+  nameGrid.innerHTML = pageItems
+    .map((item, i) => {
+      var realIndex = start + i;
+      const k = item.full;
+      const fav = favorites.includes(k);
+      const st = item.citation
+        ? item.citation.type === "historical"
+          ? "史册留名"
+          : item.citation.type === "poetry"
+          ? "诗词出处"
+          : item.citation.type === "idiom"
+          ? "成语出处"
+          : null
+        : null;
+      const yinyunScoreVal = item.scores?.yinyun ?? item.yinyunScore ?? 0;
+      const yinyunTag = yinyunScoreVal > 0
+        ? '<span class="nc-tag ' + (yinyunScoreVal >= 80 ? "tag-good" : "") + '">音韵' + yinyunScoreVal + "分</span>"
+        : "";
+      const wuxingTag = (item.chars || []).some((c) => c.wuxing)
+        ? '<span class="nc-tag tag-accent">五行·' + (item.chars || []).map((c) => c.wuxing || "").filter(Boolean).join("") + "</span>"
+        : "";
+      return (
+        '<div class="name-card" data-index="' + realIndex + '">' +
+        '<button class="nc-fav' + (fav ? " faved" : "") + '" data-fav="' + esc(k) + '">' + (fav ? "&#9733;" : "&#9734;") + "</button>" +
+        '<div class="nc-chars">' + esc(item.full) + "</div>" +
+        '<div class="nc-pinyin">' + esc(item.pinyin) + "</div>" +
+        (item.totalScore ? '<div style="font-size:12px;color:var(--ink-light);margin-bottom:4px">综合评分 <strong>' + item.totalScore + '</strong></div>' : '') +
+        '<div class="nc-tags">' +
+        (item.citationSource && item.citationSource !== "成语语料" ? '<span class="nc-tag tag-good">&#10003; 典籍</span>' : item.known ? '<span class="nc-tag tag-good">&#10003; 知名</span>' : "") +
+        (st ? '<span class="nc-tag tag-accent">' + st + "</span>" : "") +
+        yinyunTag +
+        wuxingTag +
+        (item.chars && item.chars[0].structure && item.chars[1].structure ? '<span class="nc-tag tag-subtle">字形' + item.chars[0].structure.group + '+' + item.chars[1].structure.group + '</span>' : '') +
+        (item.uniqueness ? '<span class="nc-tag tag-pop">稀有度' + (item.uniqueness >= 5 ? '极罕' : item.uniqueness >= 3 ? '较稀' : item.uniqueness >= 1.5 ? '适中' : '常见') + '</span>' : '') +
+        "</div>" +
+        "</div>"
+      );
+    })
+    .join("");
+  var pg = document.getElementById("prevPage");
+  var ng = document.getElementById("nextPage");
+  var fp = document.getElementById("firstPage");
+  var lp = document.getElementById("lastPage");
+  var pi = document.getElementById("pageInput");
+  if (pg) pg.disabled = currentPage <= 1;
+  if (ng) ng.disabled = currentPage >= totalPages;
+  if (fp) fp.disabled = currentPage <= 1;
+  if (lp) lp.disabled = currentPage >= totalPages;
+  if (pi) { pi.value = currentPage; pi.max = totalPages; }
+}
+
+// ---- Build detail sections ----
+function buildDetailSections(item, o) {
+  const c = calculateFullBazi(o);
+  let sections = [];
+  if (!c) return '<div class="empty-state"><p>无法加载八字信息</p></div>';
+
+  const { surname } = o || {};
+
+  // 1. 名字寓意
+      if (item.scores) {
+      const sk = [
+        { key: "bazi", label: "八字喜用神", color: "#d44a3a" },
+        { key: "yinyun", label: "音韵声调", color: "#3a7a9a" },
+        { key: "culture", label: "经典文化", color: "#c49a4a" },
+        { key: "meaning", label: "字义内涵", color: "#3a8a5a" },
+        { key: "gua", label: "周易卦象", color: "#6a4a9a" },
+      ];
+      const sb = sk.map(function(s) {
+        const v = item.scores[s.key] || 0;
+        const p = Math.max(3, v);
+        return "<div style='margin-bottom:6px'>" +
+          "<div style='display:flex;justify-content:space-between;font-size:12px;color:var(--ink-light)'>" +
+          "<span>" + s.label + "</span><span>" + v + "</span></div>" +
+          "<div style='height:6px;background:var(--line-light);border-radius:3px;overflow:hidden'>" +
+          "<div style='height:100%;width:" + p + "%;background:" + s.color + ";border-radius:3px'></div></div></div>";
+      }).join("");
+      sections.push({
+        _key: "score",
+        icon: "&#128200;",
+        title: "综合评分",
+        html: "<div style='margin-bottom:8px'><strong>总分：" + item.totalScore + "</strong> / 100</div>" + sb +
+          "<div class=\"helper-text\">基于五个维度加权计算，默认权重：八字喜用神40%+经典文化20%+音韵声调20%+字义内涵12%+周易卦象8%。可自定义权重。<br>点击右上角\"⚖️ 权重\"可自定义各维度权重。<br><br><strong>评分说明：</strong><br>• 八字喜用神（40%）：基础60分，命中喜用神+20分/字，落入忌神-20分/字，均未命中+10分/字<br>• 音韵声调（20%）：基础60分，读音流畅+20，声调平仄+10，声母不同+5，韵母不同+5<br>• 经典文化（20%）：基础60分，两字均有典籍出处=100分，单个字有出处=80分<br>• 字义内涵（12%）：基础30分，valence×10+温暖度×5+能力感×5，满分100<br>• 周易卦象（8%）：笔画数起卦，按六十四卦吉凶得分，大吉卦=100分</div>",
+        open: true,
+      });
+    }
+
+
+
+sections.push({
+    _key: "meaning",
+    icon: "&#128214;",
+    title: "名字寓意",
+    html: '<p>' + esc(item.explanation || "") + "</p>" + (item.citation ? citationBlock(item.citation) : '<div class="helper-text">此名未找到经典出处，主要依据字义和音韵搭配生成。</div>'),
+    open: true,
+  });
+
+  // 5. 用字详解
+  const charHtml = (item.chars || [])
+    .map(
+      function (ch) {
+        const ex = excludedChars.includes(ch.char);
+        return (
+          '<div class="char-detail-box">' +
+          '<div class="cd-char">' + esc(ch.char) + "</div>" +
+          '<div class="cd-stat">' + esc(ch.pinyin || "") + " · " + (ch.strokes || "?") + "画" +
+          (ch.kangxiStroke ? " (康熙" + ch.kangxiStroke + "画)" : "") +
+          "</div>" +
+          '<div class="cd-stat">字义评分：' + ml(ch.valence) +
+          " · 常见度：" + ml(ch.ppm, "popularity") +
+          "</div>" +
+          (ch.wuxing || ch.wuxingFate ? '<div class="cd-stat">五行：' + (ch.wuxing || ch.wuxingFate || "—") + "</div>" : "") +
+          (ch.meaning ? '<div class="cd-stat" style="margin-top:2px">' + esc(ch.meaning) + "</div>" : "") +
+          (ch.chaizi && ch.chaizi.length
+            ? '<div class="cd-chaizi">拆字：' + ch.chaizi.map(function (cz) { return cz.decomposition; }).join(" · ") + "</div>"
+            : "") +
+          (ex ? '<div style="color:var(--accent);font-size:12px;margin-top:4px">已排除</div>' : "") +
+          "</div>"
+        );
+      }
+    )
+    .join("");
+
+  sections.push({
+    _key: "detail",
+    icon: "&#9998;&#65039;",
+    title: "用字详解",
+    html: '<div class="char-detail-row">' + charHtml + "</div>",
+    open: false,
+  });
+
+﻿  // 2. 八字命理 - 增强版
+  // 2a. 四柱宫位总览
+  const PILLAR_KEYS = { year: "年", month: "月", day: "日", hour: "时" };
+  const pillarGridHtml =
+    '<div class="bz-grid">' +
+    (c.pillarDetail || []).map(function(d) {
+      var ps = c.pillarStages && c.pillarStages[d.key];
+      return '<div class="bz-card">' +
+        '<div class="bz-header">' +
+          '<span class="bz-label">' + PILLAR_KEYS[d.key] + '柱</span>' +
+          '<span class="bz-ganzhi">' + esc(d.pillar) + '</span>' +
+          '<span class="bz-stage">' + esc(ps ? ps.stage : '') + '</span>' +
+        '</div>' +
+        '<div class="bz-body">' +
+          '<div class="bz-elems">天干：' + esc(d.stemElement) + ' · 地支：' + esc(d.branchElement) + '</div>' +
+          (ps ? '<div class="bz-domain">' + esc(ps.domain) + '</div>' : '') +
+          (ps ? '<div class="bz-desc">' + esc(ps.desc) + '</div>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('') +
+    '</div>';
+
+  // 2b. 天干十神详解（含现实含义）
+  var shiShenStems = c.shiShen ? Object.entries(c.shiShen).map(function(e) {
+    var k = e[0], v = e[1];
+    var meaningMap = {};
+    meaningMap[v.stemShiShen] = EXPLAIN[v.stemShiShen] || '十神之一';
+    return '<div class="bz-ten-row">' +
+      '<span class="bz-ten-label">' + PILLAR_KEYS[k] + '干</span>' +
+      '<span class="bz-ten-stem">' + esc(v.stem) + '</span>' +
+      '<span class="bz-ten-name">' + explainTerm(v.stemShiShen, meaningMap) + '</span>' +
+      '<span class="bz-ten-desc">' + esc(EXPLAIN[v.stemShiShen + '_short'] || '') + '</span>' +
+    '</div>';
+  }).join('') : '';
+
+  // 2c. 地支藏干深度解读
+  var hiddenStemHtml = '';
+  if (c.shiShen) {
+    var hsSections = Object.entries(c.shiShen).map(function(e) {
+      var k = e[0], v = e[1];
+      var hs = v.hiddenStems || [];
+      if (hs.length === 0) return '';
+      var stageInfo = c.pillarStages && c.pillarStages[k];
+      var weightLabels = ['余气', '中气', '本气'];
+      var hsRows = hs.map(function(h, i) {
+        var wl = h.weight >= 0.5 ? '本气' : h.weight >= 0.25 ? '中气' : '余气';
+        var meaningMap = {};
+        meaningMap[h.shiShen] = EXPLAIN[h.shiShen] || '十神之一';
+        return '<div class="bz-hs-row">' +
+          '<span class="bz-hs-wl" style="opacity:' + (0.5 + h.weight * 0.5) + '">' + wl + '</span>' +
+          '<span class="bz-hs-stem">' + esc(h.stem) + '</span>' +
+          '<span class="bz-hs-name">' + explainTerm(h.shiShen, meaningMap) + '</span>' +
+          (h.shiShen ? '<span class="bz-hs-desc">' + esc(EXPLAIN[h.shiShen + '_short'] || '') + '</span>' : '') +
+        '</div>';
+      }).join('');
+      return '<div class="bz-hs-block">' +
+        '<div class="bz-hs-title">' + PILLAR_KEYS[k] + '支<span class="bz-hs-branch">' + esc(v.branch) + '</span>' +
+        (stageInfo ? '<span class="bz-hs-stage">' + esc(stageInfo.domain) + '</span>' : '') +
+        '</div>' +
+        hsRows +
+      '</div>';
+    }).filter(Boolean).join('');
+    if (hsSections) {
+      hiddenStemHtml = '<div class="bz-hs-container">' + hsSections + '</div>';
+    }
+  }
+
+  // 2d. 十神旺度排序
+  var tenGodRankHtml = '';
+  if (c.tenGodRank && c.tenGodRank.length) {
+    var maxCount = c.tenGodRank[0].count;
+    tenGodRankHtml = '<div class="bz-rank-container">' +
+      c.tenGodRank.map(function(r) {
+        var pct = Math.round(r.count / maxCount * 100);
+        var meaningMap = {};
+        meaningMap[r.name] = EXPLAIN[r.name] || '十神之一';
+        return '<div class="bz-rank-row">' +
+          '<span class="bz-rank-name">' + explainTerm(r.name, meaningMap) + '</span>' +
+          '<div class="bz-rank-bar"><div class="bz-rank-fill" style="width:' + pct + '%"></div></div>' +
+          '<span class="bz-rank-count">' + r.count.toFixed(1) + '</span>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+
+  // 2e. 喜忌与人生方向建议
+  var adviceHtml = '';
+  if (c.xiyong) {
+    var xi = c.xiyong.xiYongElement || '—';
+    var ji = c.xiyong.jiShenElement || '—';
+    var strength = c.xiyong.strength || '中和';
+    var wx = c.xiyong.wuxingScore || {};
+    var topWx = Object.entries(wx).sort(function(a,b) { return b[1] - a[1]; });
+    var mostWx = topWx[0] ? topWx[0][0] : '—';
+    var leastWx = topWx[topWx.length-1] ? topWx[topWx.length-1][0] : '—';
+    adviceHtml = '<div class="bz-advice">' +
+      '<div class="bz-advice-section">' +
+        '<strong>' + explainTerm('喜用神', {'喜用神': EXPLAIN['喜用神']}) + '</strong>：<span class="bz-tag-xi">' + xi + '</span>（取名首选此五行用字）<br>' +
+        '<strong>' + explainTerm('忌神', {'忌神': EXPLAIN['忌神']}) + '</strong>：<span class="bz-tag-ji">' + ji + '</span>（取名应避开此五行）' +
+      '</div>' +
+      '<div class="bz-advice-section">' +
+        '<strong>五行旺度</strong>：' + mostWx + '最旺 · ' + leastWx + '最弱<br>' +
+        (c.xiyong.geJu ? '<strong>格局</strong>："' + esc(c.xiyong.geJu) + '"' : '') +
+        ' · <strong>命局</strong>' + explainTerm(strength, {'身强': EXPLAIN['身强'], '身弱': EXPLAIN['身弱']}) +
+      '</div>' +
+      '<div class="bz-advice-section bz-advice-life">' +
+        '<strong>人生方向提点</strong><br>' +
+        '• <strong>事业</strong>：' + (xi === '金' ? '官印相生格局，大企业、体制内、技术管理岗最优' : xi === '水' ? '食伤生财，创意策划、自由职业、贸易流通业有天然优势' : xi === '木' ? '财星为用，商贸、投资、灵活项目收益最佳' : xi === '火' ? '官杀为用，管理岗、体制内、需要执行力的事业适合' : '专业技艺立身，适合技术管理、知识型岗位') +
+        '<br>• <strong>财运</strong>：' + (strength === '身弱' ? '偏财旺但比劫弱，适合专注主业，避免多人合伙投资' : '财官有力，正偏财双线发展收益高') +
+        '<br>• <strong>性格</strong>：' + (c.tenGodRank && c.tenGodRank[0] && (c.tenGodRank[0].name === '偏印' || c.tenGodRank[0].name === '正印') ? '印星成势，悟性极佳，适合技术、策划、文创、咨询行业，减少不必要的精神内耗' : '官杀有制，执行力强，适合目标明确的发展路径') +
+        '<br>• <strong>婚姻</strong>：日支为夫妻宫，配偶事业心强，家庭稳定，注意避免亲友人情带来的财务损耗' +
+      '</div>' +
+    '</div>';
+  }
+
+﻿  // 2f. 纳音 (卡片版)
+  var nayinHtml = '';
+  if (c.naYin && c.pillars) {
+    var nayinEntries = Object.entries(c.naYin);
+    var NAYIN_ORIGIN = {
+      '山头火': '年柱乙亥：戌亥在西北乾山，火气藏山中不外露，像山里的野火，故名山头火',
+      '屋上土': '月柱丙戌：土在房顶，薄土一层，不是大地厚土，叫屋上土',
+      '白蜡金': '日柱辛巳：金像蜡烛表面白蜡，质地柔软需打磨才有光，代表早年平凡、雕琢成才',
+      '长流水': '时柱壬辰：辰巳为东南长河，水流连绵不断，源源不断，故名长流水',
+      '海中金': '金藏海底，珍贵但深藏不露，需大运挖掘',
+      '炉中火': '火在炉中，光芒内敛，需要燃材才能旺盛',
+      '大林木': '木成森林，群体优势明显，独木难支',
+      '路旁土': '路边之土，众人踩踏，需自强不息',
+      '剑锋金': '宝剑锋芒，刚毅锋利，需小心伤人伤己',
+      '涧下水': '山涧溪水，清澈见底，心思纯净',
+      '城头土': '城楼之土，有护城之功，稳重可靠',
+      '杨柳木': '杨柳依依，柔美多姿，适应力强',
+      '泉中水': '泉水之源，源源不断，智慧深邃',
+      '霹雳火': '雷火猛烈，爆发力强，气势惊人',
+      '松柏木': '松柏常青，坚韧耐寒，高风亮节',
+      '沙中金': '沙中淘金，需经磨练方显价值',
+      '山下火': '山下一把火，温暖照人，光芒不刺眼',
+      '平地木': '平地之木，平凡中见不凡',
+      '壁上土': '壁上之土，装饰之功，需依附墙体',
+      '金箔金': '金箔装饰，光华夺目但不厚重',
+      '覆灯火': '灯中之火，给人光明和方向',
+      '天河水': '天河之水，浩瀚无边，胸怀宽广',
+      '大驿土': '驿站之土，通达四方，旅途顺利',
+      '钗钏金': '金饰钗钏，华丽精美，贵气外露',
+      '桑柘木': '桑柘之木，养蚕缫丝，造福于人',
+      '大溪水': '大溪之水，奔流不息，勇往直前',
+      '沙中土': '沙中之土，结构松散，需凝聚方能成事',
+      '天上火': '天上之火，光芒万丈，普照大地',
+      '石榴木': '石榴之木，多子多福，吉祥如意',
+      '大海水': '大海之水，包容万物，气度非凡'
+    };
+    var PILLAR_KEYS_O = { year:'年', month:'月', day:'日', hour:'时' };
+    var nayinCards = nayinEntries.map(function(e) {
+      var origin = NAYIN_ORIGIN[e[1]] || '';
+      var pk = PILLAR_KEYS_O[e[0]] || e[0];
+      var pz = c.pillars[e[0]] || '';
+      return '<div class="bz-card">' +
+        '<div class="bz-header">' +
+          '<span class="bz-label">' + pk + '柱</span>' +
+          '<span class="bz-ganzhi">' + pz + '</span>' +
+          '<span class="bz-stage" style="font-size:14px;font-weight:600;color:var(--gold)">' + e[1] + '</span>' +
+        '</div>' +
+        (origin ? '<div class="bz-body"><div class="bz-desc" style="font-size:13px;line-height:1.5">' + origin + '</div></div>' : '') +
+      '</div>';
+    }).join('');
+    nayinHtml = '<div class="bz-grid" style="grid-template-columns:repeat(2,1fr)">' + nayinCards + '</div>';
+  }
+
+  // 2g. 大运 (卡片版)
+  var dayunHtml = '';
+  if (c.daYun && c.pillars) {
+    var userGender = (o && o.gender) || 'male';
+    var genderMap = { male:'男命', female:'女命' };
+    var genderLabel = genderMap[userGender] || '男命';
+    var yearGan = c.pillars.year ? c.pillars.year[0] : '—';
+    var isYangYang = ['甲','丙','戊','庚','壬'].indexOf(yearGan) >= 0;
+    var isForward = (isYangYang && userGender === 'male') || (!isYangYang && userGender === 'female');
+    var direction = isForward ? '顺排' : '逆排';
+    var directionDetail = isForward ? '从月柱往后顺数干支' : '从月柱往前倒数干支';
+    var numMap = ['一','二','三','四','五','六','七','八'];
+    var DAYUN_DETAIL = {
+      '乙酉': { desc: '童年求学运', detail: '前5年乙木(财星)：家里开销大，父母辛苦，你心思早熟。后5年酉金(比肩)：体质变好，性格倔强有主见，读书中上，同学缘好。' },
+      '甲申': { desc: '初高中、大学青春运', detail: '前5年甲木(正财)：青春期爱美，容易早恋，为感情分心，花销变大。后5年申金(劫财帮身)：利学业考试，升学顺利，朋友变多，会外出读书。' },
+      '癸未': { desc: '当下十年：立业、结婚、扎根期', detail: '前5年癸水(食神/喜用)：头脑灵活，口才变好，靠技术/策划赚钱，桃花旺，是成家最佳十年。后5年未土(燥土忌神)：压力陡增，事业停滞，长辈管束多，注意脾胃健康。' },
+      '壬午': { desc: '中年事业上升黄金运', detail: '前5年壬水(伤官/最旺喜用)：才华发挥，事业上升期，升职涨薪，适合创业管理。后5年午火(七杀)：竞争加剧，工作焦虑，注意心脏血压，不宜高风险投资。' },
+      '辛巳': { desc: '中年负重压力运', detail: '整步火旺克金，是一生压力最大十年。领导严苛，行业下行风险，同辈朋友拖累。唯一利好：辛金帮身，再难也有亲友扶持，适合求稳。' },
+      '庚辰': { desc: '人生转运收获大吉运', detail: '辰土润局生金，庚金帮扶日主。晚年最好的一步：事业收尾安稳，早年投资开始持续进财，贵人多，身体回暖，家庭和睦。' },
+      '己卯': { desc: '退休养老操心运', detail: '前5年己土(忌神)：闲不住，操心子女，易为晚辈破财，注意睡眠肠胃。后5年卯木(财星)：闲时有额外收入，夫妻相伴安稳，多旅游散心有利身心。' },
+      '戊寅': { desc: '安享晚年平顺运', detail: '一生最清闲十年。子女孝顺，衣食无忧，少有大额破财，小病不影响生活。适合静养读书，少操劳长途奔波。' },
+    };
+    var STEM_SHISHEN = {甲:'正财',乙:'偏财',丙:'正官',丁:'七杀',戊:'正印',己:'偏印',庚:'劫财',辛:'比肩',壬:'伤官',癸:'食神'};
+    
+    var daYunCards = c.daYun.map(function(d, di) {
+      var dd = DAYUN_DETAIL[d.ganZhi] || {};
+      var gan = d.ganZhi[0];
+      var zhi = d.ganZhi[1];
+      var ganSs = STEM_SHISHEN[gan] || '';
+      var zhiSs = STEM_SHISHEN[zhi] || '';
+      var ageParts = d.age.split('-');
+      var startA = parseInt(ageParts[0]);
+      var midAge = startA + 5;
+      return '<div class="bz-card">' +
+        '<div class="bz-header">' +
+          '<span class="bz-label">第' + numMap[di] + '运</span>' +
+          '<span class="bz-ganzhi" style="font-size:16px">' + d.ganZhi + '</span>' +
+          '<span class="bz-stage">' + d.age + '岁</span>' +
+        '</div>' +
+        '<div class="bz-body">' +
+          '<div class="bz-desc" style="font-weight:600;color:var(--gold);margin-bottom:4px">' + (dd.desc || '') + '</div>' +
+          '<div class="bz-desc" style="font-size:13px;line-height:1.5">' + (dd.detail || '') + '</div>' +
+          '<div class="bz-desc" style="font-size:12px;color:var(--ink-light);margin-top:4px">' +
+            '天干<span style="color:var(--ink);font-weight:500">' + gan + '</span>(' + ganSs + ')主导' + startA + '~' + midAge + '岁 &#183; ' +
+            '地支<span style="color:var(--ink);font-weight:500">' + zhi + '</span>主导' + midAge + '~' + (startA + 10) + '岁' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    
+    dayunHtml =
+      '<div class="bz-intro" style="margin-bottom:8px;font-size:13px;line-height:1.6;color:var(--ink-light)">' +
+        genderLabel + ' &#183; 年干' + yearGan + '为' + (isYangYang ? '阳干' : '阴干') + ' &#8594; ' + direction + '（' + directionDetail + '）' +
+      '</div>' +
+      '<div class="bz-grid" style="grid-template-columns:repeat(2,1fr)">' + daYunCards + '</div>';
+  }
+
+  sections.push({
+    _key: "bazi",
+    icon: "&#128302;",
+    title: "八字命理",
+    html:
+      '<div class="bz-intro">' +
+        (c.solarTimeNote ? '<div class="helper-text" style="margin-bottom:8px;font-size:12px;color:var(--accent)">' + esc(c.solarTimeNote) + '</div>' : '') +
+        '日主为<strong>' + esc(c.pillars?.day?.slice(0, 1) || '庚') + '</strong>，' +
+        explainTerm('日主', {'日主': EXPLAIN['日主']}) + '代表本人。' +
+        (c.xiyong ? '命局' + explainTerm(c.xiyong.strength || '中和', {'身强': EXPLAIN['身强'], '身弱': EXPLAIN['身弱']}) + '。' : '') +
+      '</div>' +
+      '<div class="bz-section"><div class="bz-section-title">一、四柱宫位总览</div>' + pillarGridHtml + '</div>' +
+      '<div class="bz-section"><div class="bz-section-title">二、天干十神详解</div>' +
+        '<div class="bz-ten-container">' + shiShenStems + '</div></div>' +
+      '<div class="bz-section"><div class="bz-section-title">三、地支藏干深度解读</div>' +
+        '<div class="bz-hs-intro">地支藏干是四柱地支内部潜藏的五行能量，分<span class="explain-term" title="本气是地支中最主要的力量，力量最强" data-explain="本气是地支中最主要的力量，力量最强，占总能量50%以上">本气</span>（主力）、<span class="explain-term" title="中气是地支中次要的潜藏力量" data-explain="中气是地支中次要的潜藏力量，占总能量20-30%">中气</span>（次力）、<span class="explain-term" title="余气是地支中最弱的潜藏能量" data-explain="余气是地支中最弱的潜藏能量，占总能量10-20%">余气</span>（余力）三层，代表内心潜意识与暗藏机遇是非。</div>' +
+        hiddenStemHtml + '</div>' +
+      (tenGodRankHtml ? '<div class="bz-section"><div class="bz-section-title">四、十神旺度排序</div>' + tenGodRankHtml + '</div>' : '') +
+      (adviceHtml ? '<div class="bz-section"><div class="bz-section-title">五、喜忌与人生方向</div>' + adviceHtml + '</div>' : '') +
+      (nayinHtml ? '<div class="bz-section"><div class="bz-section-title">六、纳音</div>' + nayinHtml + '</div>' : '') +
+      (dayunHtml ? '<div class="bz-section"><div class="bz-section-title">七、大运</div>' + dayunHtml + '</div>' : ''),
+    open: true,
+  });
+
+  // 4. 音韵评分
+  var yinyunVal2 = item.scores?.yinyun ?? item.yinyunScore ?? 0;
+  sections.push({
+    _key: "yinyun",
+    icon: "&#127925;",
+    title: "音韵评分",
+    html: yinyunVal2 > 0
+      ? '<p><strong>音韵评分：' + yinyunVal2 + "分</strong> " +
+        (yinyunVal2 >= 90 ? "&#127775; 声调优美，朗朗上口" : yinyunVal2 >= 70 ? "&#127775; 音律和谐" : "&#9888;&#65039; 音韵方面有改进空间") +
+        "</p>" +
+        "<p>" + esc(item.yinyunNotes || "") + "</p>" +
+        '<div class="helper-text">' +
+        explainTerm("声母", {"声母": EXPLAIN["声母"]}) + "和" +
+        explainTerm("韵母", {"韵母": EXPLAIN["韵母"]}) +
+        "搭配不同则发音清晰、有节奏感；" +
+        explainTerm("平仄", {"平仄": EXPLAIN["平仄"]}) +
+        "交替则读起来抑扬顿挫。</div>"
+      : '<p>暂无语音数据</p>',
+    open: true,
+  });
+
+  // 3. 五行分析
+  const wxScores = c.xiyong?.wuxingScore || {};
+  const totalWx = Object.values(wxScores).reduce((a, b) => a + b, 0) || 1;
+  const wxNames = { "木": "木", "火": "火", "土": "土", "金": "金", "水": "水" };
+  const wxBars = Object.entries(wxNames)
+    .map(([k, label]) => {
+      const score = wxScores[k] || 0;
+      const pct = Math.round((score / totalWx) * 100);
+      const isXi = c.xiyong?.xiYongElement === k;
+      const isJi = c.xiyong?.jiShenElement === k;
+      const cls = "wx-" + { "木": "wood", "火": "fire", "土": "earth", "金": "metal", "水": "water" }[k];
+      return (
+        '<div class="wx-bar-item">' +
+        '<div class="wx-bar-label">' + label + " " + score + (isXi ? " ★喜" : isJi ? " ▲忌" : "") + "</div>" +
+        '<div class="wx-bar-track"><div class="wx-bar-fill ' + cls + '" style="width:' + pct + '%"></div></div>' +
+        "</div>"
+      );
+    })
+    .join("");
+
+  sections.push({
+    _key: "wuxing",
+    icon: "&#127807;",
+    title: "五行能量",
+    html:
+      "<p>八字五行能量分布：</p>" +
+      '<div class="wx-bars">' + wxBars + "</div>" +
+      "<p>" +
+      explainTerm("喜用神", {"喜用神": EXPLAIN["喜用神"]}) +
+      "为 <strong>" + (c.xiyong?.xiYongElement || "—") + "</strong>，五行偏弱需要补充。" +
+      explainTerm("忌神", {"忌神": EXPLAIN["忌神"]}) +
+      "为 <strong>" + (c.xiyong?.jiShenElement || "—") + "</strong>，取名应避免此五行。以上评分基于传统命理算法，综合月令调候和五行旺衰计算。</p>" +
+      (item.chars && item.chars.length
+        ? "<p><strong>姓名五行</strong>：" +
+          item.chars.map(function (cc) { return cc.char + "(" + (cc.wuxing || cc.wuxingFate || "—") + ")"; }).join("、") +
+          "</p>"
+        : ""),
+    open: true,
+  });
+
+    // 6.5 周易卦象
+  if (item._gua && item._gua.hexagram) {
+    var g = item._gua;
+    var fc = {"大吉":"var(--success)","中吉":"var(--gold)","中平":"var(--ink-light)","凶":"var(--accent)"};
+    var ci = {"事业开创":"💼","品德修养":"🧘","开拓进取":"🚀","学业智慧":"📚","事业等待":"⏳","谨慎防范":"⚠️","领导才能":"👑","人际关系":"🤝","积累成长":"🌱","谨慎行事":"📋"};
+    var color = fc[g.fortune] || "var(--ink-light)";
+    var guaHtml = `<div style="padding:8px 0">` +
+      `<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">` +
+      `<div style="font-size:36px;line-height:1">` + esc(g.symbol || "") + `</div>` +
+      `<div><div style="font-size:18px;font-weight:600">` + esc(g.hexagram) + `</div>` +
+      `<div style="font-size:13px"><span style="color:` + color + `;font-weight:600">` + esc(g.fortune || "—") + `</span>` +
+      " · " + (ci[g.category] || esc(g.category || "")) + `</div></div></div>` +
+      `<div style="margin-bottom:8px;line-height:1.7;background:var(--bg2);padding:8px;border-radius:6px">` + esc(g.desc || "") + `</div>` +
+      `<div style="display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap">` +
+      `<span style="background:var(--bg2);padding:4px 10px;border-radius:4px;font-size:13px">上卦: ` + esc(g.upperGua || "") + `(` + esc(g.upperWuxing || "") + `) ` + esc(g.upperSymbol || "") + `</span>` +
+      `<span style="background:var(--bg2);padding:4px 10px;border-radius:4px;font-size:13px">下卦: ` + esc(g.lowerGua || "") + `(` + esc(g.lowerWuxing || "") + `) ` + esc(g.lowerSymbol || "") + `</span>` +
+      `<span style="background:var(--bg2);padding:4px 10px;border-radius:4px;font-size:13px">动爻: 第` + (g.movingYao || "—") + `爻</span>` +
+      `</div>` +
+      (g.judgement ? `<div style="margin-bottom:6px"><strong>卦辞：</strong>` + esc(g.judgement) + `</div>` : "") +
+      (g.image ? `<div style="margin-bottom:8px"><strong>象辞：</strong>` + esc(g.image) + `</div>` : "") +
+      `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px">` +
+      (g.career ? `<div style="background:var(--bg2);padding:6px 8px;border-radius:4px;font-size:12px"><strong>事业：</strong>` + esc(g.career) + `</div>` : "") +
+      (g.wealth ? `<div style="background:var(--bg2);padding:6px 8px;border-radius:4px;font-size:12px"><strong>财运：</strong>` + esc(g.wealth) + `</div>` : "") +
+      (g.relation ? `<div style="background:var(--bg2);padding:6px 8px;border-radius:4px;font-size:12px"><strong>感情：</strong>` + esc(g.relation) + `</div>` : "") +
+      `</div>` +
+    `</div>`;
+    sections.push({
+      _key: "gua",
+      icon: "☯️",
+      title: "周易卦象",
+      html: guaHtml,
+      open: true,
+    });
+  }
+    // 7. 生肖适配
+  if (item.zodiacInfo && item.zodiacInfo.length > 0 && c && c.zodiac) {
+    const za = c.zodiac;
+    const zodiacExplanations = {
+      "鼠": { likes: "宀、口、米、豆、禾", avoids: "马、羊、火、午" },
+      "牛": { likes: "艹、宀、辶、車", avoids: "羊、马、未、午" },
+      "虎": { likes: "山、林、王、肉", avoids: "猴、申、蛇、巳" },
+      "兔": { likes: "艹、宀、木、彡", avoids: "鸡、酉、龙、辰" },
+      "龙": { likes: "日、月、星、云、水", avoids: "犬、戌、狗" },
+      "蛇": { likes: "宀、艹、木、心", avoids: "猪、亥、虎、寅" },
+      "马": { likes: "艹、宀、木、禾", avoids: "鼠、子、牛、丑" },
+      "羊": { likes: "艹、宀、木、禾", avoids: "牛、丑、鼠、子" },
+      "猴": { likes: "木、禾、山、王", avoids: "虎、寅、蛇、巳" },
+      "鸡": { likes: "宀、豆、米、虫", avoids: "兔、卯、狗、戌" },
+      "狗": { likes: "宀、辶、冫、衣", avoids: "龙、辰、鸡、酉" },
+      "猪": { likes: "宀、水、木、禾", avoids: "蛇、巳、猴、申" },
+    };
+    const zodiacAnimalNames = {"鼠":"🐭鼠","牛":"🐮牛","虎":"🐯虎","兔":"🐰兔","龙":"🐲龙","蛇":"🐍蛇","马":"🐴马","羊":"🐑羊","猴":"🐵猴","鸡":"🐔鸡","狗":"🐶狗","猪":"🐷猪"};
+    const zx = zodiacExplanations[za] || {};
+    let zHtml = '<div style="margin-bottom:8px"><strong>生肖：' + (zodiacAnimalNames[za] || za) + '</strong></div>';
+    zHtml += '<table style="width:100%;font-size:13px;border-collapse:collapse">';
+    for (const zi of item.zodiacInfo) {
+      if (zi.char) {
+        const ch = zi.char;
+        const mt = zi.match;
+        const icon = mt === "better" ? "✅" : mt === "worse" ? "❌" : "➖";
+        const explain = mt === "better" ? "宜用偏旁，与生肖相合" : mt === "worse" ? "忌用偏旁，与生肖冲克" : "中性，无特殊宜忌";
+        zHtml += '<tr style="border-bottom:1px solid var(--line-light)">' +
+          '<td style="padding:6px 4px;font-size:18px;text-align:center">' + esc(ch) + '</td>' +
+          '<td style="padding:6px 4px">' + icon + ' ' + esc(explain) + '</td>' +
+          '<td style="padding:6px 4px;font-size:12px;color:var(--ink-light)">' +
+          (mt === "better" ? '此字所含偏旁与' + za + '年生肖相合，能增强运势' :
+           mt === "worse" ? '此字所含偏旁与' + za + '年生肖相冲，建议避开' :
+           '无特殊冲合关系') +
+          '</td></tr>';
+      }
+    }
+    zHtml += '</table>';
+    if (zx.likes) {
+      zHtml += '<div class="helper-text" style="margin-top:10px;font-size:13px;line-height:1.7">' +
+        '<strong>' + (zodiacAnimalNames[za] || za) + '宜用偏旁：</strong>' + esc(zx.likes) + '<br>' +
+        '<strong style="color:var(--accent)">忌用偏旁：</strong>' + esc(zx.avoids) + '</div>';
+    }
+    sections.push({
+      _key: "zodiac",
+      icon: "🐷",
+      title: "生肖适配",
+      html: zHtml +
+        '<div class="helper-text" style="margin-top:8px">' +
+        explainTerm("生肖", {"生肖": EXPLAIN["生肖"]}) +
+        "生肖姓名学认为每个生肖有宜用的偏旁字根。匹配宜用偏旁可增强运势，落入忌用偏旁则需小心。" +
+        "</div>",
+      open: false,
+    });
+  }// 7. 出处引用
+  if (item.citation) {
+    sections.push({
+      _key: "citation",
+      icon: "&#128218;",
+      title: "出处典故",
+      html: citationBlock(item.citation),
+      open: true,
+    });
+  }
+
+  // Reorder sections by user preference
+  var sectionOrder = ["score","detail","yinyun","wuxing","gua","zodiac","meaning","citation","bazi"];
+  var sectionMap = {};
+  sections.forEach(function(s) { if (s._key) sectionMap[s._key] = s; });
+  sections = sectionOrder.filter(function(k) { return sectionMap[k]; }).map(function(k) { return sectionMap[k]; });
+
+    // Render sections
+  return sections
+    .map(function (s, idx) {
+      return (
+        '<div class="detail-section">' +
+        '<div class="ds-header' + (s.open ? " open" : "") + '" data-section="' + idx + '">' +
+        '<span class="ds-icon">' + s.icon + "</span>" +
+        '<span>' + esc(s.title) + "</span>" +
+        '<span class="ds-arrow">&#9654;</span>' +
+        "</div>" +
+        '<div class="ds-content' + (s.open ? " open" : "") + '">' + s.html + "</div>" +
+        "</div>"
+      );
+    })
+    .join("");
+}
+
+function citationBlock(cite) {
+  return (
+    '<div class="citation-block">' +
+    (cite.text ? "<p>" + esc(cite.text) + "</p>" : "") +
+    '<div class="cite-source">' +
+    (cite.source ? "来源：" + esc(cite.source) : "") +
+    (cite.title ? " · " + esc(cite.title) : "") +
+    (cite.author ? " · " + esc(cite.author) : "") +
+    "</div>" +
+    "</div>"
+  );
+}
+
+// ---- Show detail ----
+function showDetail(idx) {
+  const item = lastItems[idx];
+  if (!item) return;
+  const o = lastOptions || readOptions();
+  const c = calculateFullBazi(o);
+  const k = item.full;
+  const fav = favorites.includes(k);
+
+  // Header
+  detName.textContent = item.full;
+  detMeta.innerHTML =
+    esc(item.pinyin) +
+    " · <span>" +
+    (o && o.gender === "male" ? "&#9794; 男" : o && o.gender === "female" ? "&#9792; 女" : "不限") +
+    "</span>";
+
+  detActions.innerHTML =
+    '<button class="btn-fav' + (fav ? " faved" : "") + '" data-fav-key="' + esc(k) + '">' +
+    (fav ? "&#9733; 已收藏" : "&#9734; 收藏") +
+    "</button>" +
+    (item.chars || [])
+      .map(
+        function (ch) {
+          return '<button data-exclude="' + esc(ch.char) + '">排除「' + esc(ch.char) + "」</button>";
+        }
+      )
+      .join("");
+
+  // Body - build all detail sections
+  detBody.innerHTML = buildDetailSections(item, o);
+
+  // Section toggle
+  detBody.querySelectorAll(".ds-header").forEach(function (hdr) {
+    hdr.addEventListener("click", function () {
+      const isOpen = hdr.classList.toggle("open");
+      const content = hdr.nextElementSibling;
+      if (content) {
+        content.classList.toggle("open");
+        // Trigger bar animation
+        if (isOpen) {
+          content.querySelectorAll(".wx-bar-fill").forEach(function (bar) {
+            var w = bar.style.width;
+            bar.style.width = "0%";
+            setTimeout(function () { bar.style.width = w; }, 50);
+          });
+        }
+      }
+    });
+  });
+
+  detailOverlay.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+// ---- Generate ----
+async function runGenerate() {
+  lastOptions = readOptions();
+  loader.classList.add("active");
+  nameGrid.innerHTML = "";
+  emptyState.style.display = "none";
+  renderBS(lastOptions);
+
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...lastOptions, seed: Math.random() }),
+    });
+    const data = await res.json();
+    let items = data.names || [];
+    if (excludedChars.length) items = items.filter(function (i) { return ![...i.given].some(function (c) { return excludedChars.includes(c); }); });
+    lastItems = items;
+    resultsSection.classList.add("active");
+    renderNames(items, lastOptions);
+    window.scrollTo({ top: resultsSection.offsetTop - 20, behavior: "smooth" });
+  } catch (e) {
+    loader.classList.remove("active");
+    nameGrid.innerHTML = '<div class="empty-state"><p>加载失败：' + esc(e.message) + "</p></div>";
+  }
+}
+
+// ---- Event delegation ----
+// Theme
+document.querySelector(".theme-switcher").addEventListener("click", function (e) {
+  const btn = e.target.closest(".theme-btn");
+  if (!btn) return;
+  document.querySelectorAll(".theme-btn").forEach(function (b) { b.classList.remove("active"); });
+  btn.classList.add("active");
+  document.body.className = "theme-" + btn.dataset.theme;
+});
+
+// Gender
+genderGroup.addEventListener("click", function (e) {
+  const btn = e.target.closest(".gender-btn");
+  if (!btn) return;
+  genderGroup.querySelectorAll(".gender-btn").forEach(function (b) { b.classList.remove("active"); });
+  btn.classList.add("active");
+});
+
+// Name card click -> show detail
+nameGrid.addEventListener("click", function (e) {
+  const card = e.target.closest(".name-card");
+  const favBtn = e.target.closest(".nc-fav");
+  if (favBtn) {
+    e.stopPropagation();
+    const key = favBtn.dataset.fav;
+    const i = favorites.indexOf(key);
+    if (i >= 0) favorites.splice(i, 1);
+    else favorites.push(key);
+    localStorage.setItem("babyname_favs", JSON.stringify(favorites));
+    if (lastItems.length) renderNames(lastItems, lastOptions);
+    return;
+  }
+  if (card) showDetail(Number(card.dataset.index));
+});
+
+// Detail overlay close
+// Hide explain tooltip on click elsewhere
+document.addEventListener("click", function(e) {
+  var tip = document.getElementById("explainTooltip");
+  if (tip && !e.target.closest(".explain-term")) tip.style.display = "none";
+});
+
+detailOverlay.addEventListener("click", function (e) {
+  if (e.target.closest("[data-close]") || e.target === detailOverlay) {
+    detailOverlay.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+});
+
+// Detail actions
+detActions.addEventListener("click", function (e) {
+  const favBtn = e.target.closest("[data-fav-key]");
+  if (favBtn) {
+    const key = favBtn.dataset.favKey;
+    const i = favorites.indexOf(key);
+    if (i >= 0) favorites.splice(i, 1);
+    else favorites.push(key);
+    localStorage.setItem("babyname_favs", JSON.stringify(favorites));
+    showDetail(lastItems.indexOf(lastItems.find(function (it) { return it.full === key; })));
+    return;
+  }
+  const exBtn = e.target.closest("[data-exclude]");
+  if (exBtn) {
+    const ch = exBtn.dataset.exclude;
+    if (!excludedChars.includes(ch)) {
+      excludedChars.push(ch);
+      localStorage.setItem("babyname_excluded", JSON.stringify(excludedChars));
+      detailOverlay.classList.remove("open");
+      document.body.style.overflow = "";
+      runGenerate();
+    }
+  }
+});
+
+// Generate button
+$("btnGenerate").addEventListener("click", runGenerate);
+
+// Sort & pagination event listeners
+document.getElementById("sortBy").addEventListener("change", function() {
+  if (lastItems.length) sortAndRender();
+});
+document.getElementById("btnOrder").addEventListener("click", function() {
+  var btn = this;
+  if (btn.textContent.indexOf("\u964d\u5e8f") >= 0) {
+    btn.innerHTML = "\u2195 \u5347\u5e8f";
+  } else {
+    btn.innerHTML = "\u2195 \u964d\u5e8f";
+  }
+  if (lastItems.length) sortAndRender();
+});
+document.getElementById("pageSize").addEventListener("change", function() {
+  currentPage = 1;
+  if (lastItems.length) renderNames(lastItems, lastOptions);
+});
+document.getElementById("prevPage").addEventListener("click", function() {
+  if (currentPage > 1) { currentPage--; renderNames(lastItems, lastOptions); window.scrollTo({ top: document.getElementById("resultsSection").offsetTop - 30, behavior: "smooth" }); }
+});
+document.getElementById("nextPage").addEventListener("click", function() {
+  var totalPages = Math.ceil(lastItems.length / Number(document.getElementById("pageSize").value));
+  if (currentPage < totalPages) { currentPage++; renderNames(lastItems, lastOptions); window.scrollTo({ top: document.getElementById("resultsSection").offsetTop - 30, behavior: "smooth" }); }
+});
+document.getElementById("firstPage").addEventListener("click", function() {
+  if (lastItems.length && currentPage > 1) { currentPage = 1; renderNames(lastItems, lastOptions); }
+});
+document.getElementById("lastPage").addEventListener("click", function() {
+  if (!lastItems.length) return;
+  var totalPages = Math.ceil(lastItems.length / Number(document.getElementById("pageSize").value));
+  if (currentPage < totalPages) { currentPage = totalPages; renderNames(lastItems, lastOptions); }
+});
+document.getElementById("pageInput").addEventListener("change", function() {
+  if (!lastItems.length) return;
+  var p = Number(this.value) || 1;
+  var totalPages = Math.ceil(lastItems.length / Number(document.getElementById("pageSize").value));
+  if (p < 1) p = 1;
+  if (p > totalPages) p = totalPages;
+  if (p !== currentPage) { currentPage = p; renderNames(lastItems, lastOptions); }
+  this.value = p;
+});
+
+function sortAndRender() {
+  var sortKey = document.getElementById("sortBy").value;
+  var isAsc = document.getElementById("btnOrder").textContent.indexOf("\u5347\u5e8f") >= 0;
+  var sorted = [].concat(lastItems).sort(function(a, b) {
+    var va = a[sortKey] != null ? a[sortKey] : (a.scores ? (a.scores[sortKey] || 0) : 0);
+    var vb = b[sortKey] != null ? b[sortKey] : (b.scores ? (b.scores[sortKey] || 0) : 0);
+    return isAsc ? va - vb : vb - va;
+  });
+  lastItems = sorted;
+  currentPage = 1;
+  renderNames(lastItems, lastOptions);
+}
+
+  // ---- Init lunar/picker UI ----
+  (function() {
+    const ly = document.getElementById("lunarYear");
+    if (!ly) return;
+    const lm = document.getElementById("lunarMonth");
+    const ld = document.getElementById("lunarDay");
+    for (let y = 1900; y <= 2100; y++) { const o = document.createElement("option"); o.value = y; o.textContent = y + "\u5e74"; ly.appendChild(o); }
+    for (let m = 1; m <= 12; m++) { const o = document.createElement("option"); o.value = m; o.textContent = m + "\u6708"; lm.appendChild(o); }
+    for (let d = 1; d <= 30; d++) { const o = document.createElement("option"); o.value = d; o.textContent = d + "\u65e5"; ld.appendChild(o); }
+    ly.value = 2024; lm.value = 1; ld.value = 1;
+    const lp = document.getElementById("locProvince");
+    if (lp) {
+      PROVINCES.forEach(function(p) { const o = document.createElement("option"); o.value = p; o.textContent = p; lp.appendChild(o); });
+      lp.addEventListener("change", function() {
+        const lc = document.getElementById("locCity");
+        if (!lc) return;
+        lc.innerHTML = "";
+        if (MUNICIPALITIES.has(this.value)) {
+          lc.disabled = true;
+          const o = document.createElement("option"); o.value = this.value; o.textContent = this.value + "(\u5168\u5e02)"; lc.appendChild(o);
+        } else {
+          lc.disabled = false;
+          const o = document.createElement("option"); o.value = ""; o.textContent = "\u57ce\u5e02"; lc.appendChild(o);
+          const cities = PROVINCE_CITIES[this.value];
+          if (cities) cities.forEach(function(c) { const o = document.createElement("option"); o.value = c; o.textContent = c; lc.appendChild(o); });
+        }
+      });
+    }
+    document.getElementById("birthDate").addEventListener("change", function() {
+      if (!this.value) return;
+      try {
+        const [y, m, d] = this.value.split("-").map(Number);
+        const lunar = solarToLunar(y, m, d);
+        document.getElementById("lunarYear").value = lunar.year;
+        document.getElementById("lunarMonth").value = lunar.month;
+        document.getElementById("lunarDay").value = lunar.day;
+        document.getElementById("lunarLeap").checked = lunar.isLeap;
+      } catch(e) { console.warn(e); }
+    });
+
+["lunarYear","lunarMonth","lunarDay","lunarLeap"].forEach(function(id) {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("change", function() {
+        const yr = Number(document.getElementById("lunarYear").value);
+        const mn = Number(document.getElementById("lunarMonth").value);
+        const dy = Number(document.getElementById("lunarDay").value);
+        const isLeap = document.getElementById("lunarLeap").checked;
+        if (!yr || !mn || !dy) return;
+        try {
+          const solar = lunarToSolar(yr, mn, dy, isLeap);
+          document.getElementById("birthDate").value = solar.year + "-" + String(solar.month).padStart(2,"0") + "-" + String(solar.day).padStart(2,"0");
+        } catch(e) { console.warn(e); }
+      });
+    });
+    var today = new Date();
+    document.getElementById("birthDate").value = today.getFullYear() + "-" + String(today.getMonth()+1).padStart(2,"0") + "-" + String(today.getDate()).padStart(2,"0");
+    document.getElementById("birthDate").dispatchEvent(new Event("change"));
+  })();
+
+  // Init birth banner
+
+renderBS(readOptions());
+
+// Auto-generate on load
+runGenerate();
+
+
+
+
+// ---- Weight controls ----
+function initWeights() {
+  var saved = localStorage.getItem("babyname_weights");
+  if (saved) { try { return JSON.parse(saved); } catch(e) {} }
+  return { bazi:40, yinyun:20, meaning:12, gua:8, culture:20 };
+}
+
+function renderWeightSliders(weights) {
+  var container = document.getElementById("weightSliders");
+  var labels = { bazi:"八字喜用神", yinyun:"音韵声调", meaning:"字义内涵", gua:"周易卦象", culture:"经典文化" };
+  var colors = { bazi:"#d44a3a", yinyun:"#3a7a9a", meaning:"#3a8a5a", gua:"#9a5a8a", culture:"#c49a4a" };
+  container.innerHTML = Object.keys(labels).map(function(key) {
+    var val = weights[key] || 0;
+    return "<div class='ws-row'>" +
+      "<div class='ws-label'><span style='display:inline-block;width:10px;height:10px;background:" + colors[key] + ";border-radius:50%;margin-right:6px'></span>" + labels[key] + "</div>" +
+      "<input type='range' class='ws-slider' min='0' max='50' value='" + val + "' data-key='" + key + "'><input type='number' class='ws-number' min='0' max='50' value='" + val + "' data-key='" + key + "' style='width:50px;padding:2px 6px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);font-size:13px;text-align:center;outline:none'>" +
+      "<span class='ws-value' id='ws-val-" + key + "'>" + val + "%</span>" +
+      "</div>";
+  }).join("");
+}
+
+// ---- Override readOptions to include weights ----
+var _origReadOptions = readOptions;
+readOptions = function() {
+  var opts = _origReadOptions();
+  opts.weights = initWeights();
+  return opts;
+};
+
+// ---- Event delegation additions ----
+document.addEventListener("click", function(e) {
+  if (e.target.closest("#btnWeightApply")) { 
+    // Read current slider values before applying
+    var ws = document.querySelectorAll("#weightSliders .ws-number");
+    var w = {};
+    for (var wi = 0; wi < ws.length; wi++) {
+      w[ws[wi].dataset.key] = Number(ws[wi].value) || 0;
+    }
+    localStorage.setItem("babyname_weights", JSON.stringify(w));
+    document.getElementById("weightPanel").style.display = "none"; 
+    runGenerate(); 
+    return; 
+  }
+  if (e.target.closest("#btnShuffle")) { runGenerate(); return; }
+  if (e.target.closest("#btnWeightToggle")) {
+    var panel = document.getElementById("weightPanel");
+    var isOpen = panel.style.display !== "none" && panel.style.display !== "";
+    panel.style.display = isOpen ? "none" : "block";
+    if (!isOpen) { renderWeightSliders(initWeights()); 
+    // Attach live weight listeners
+    setTimeout(function() {
+      var sliders = document.querySelectorAll("#weightSliders .ws-slider, #weightSliders .ws-number");
+      sliders.forEach(function(el) {
+        el.addEventListener("input", function() {
+          var key = this.dataset.key;
+          var val = Number(this.value) || 0;
+          var sibling = this.closest(".ws-row").querySelector(this.tagName === "INPUT" && this.type === "range" ? ".ws-number" : ".ws-slider");
+          if (sibling) sibling.value = val;
+          document.getElementById("ws-val-" + key).textContent = val + "%";
+        });
+      });
+    }, 50);
+  }
+    return;
+  }
+
+  // Explain term tooltip
+  if (e.target.closest(".explain-term")) {
+    var et = e.target.closest(".explain-term");
+    var explain = et.dataset.explain;
+    if (explain) {
+      var tip = document.getElementById("explainTooltip");
+      if (!tip) {
+        tip = document.createElement("div");
+        tip.id = "explainTooltip";
+        tip.style.cssText = "position:fixed;background:#333;color:#fff;padding:12px 16px;border-radius:8px;font-size:13px;line-height:1.6;max-width:320px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,0.25);pointer-events:none";
+        document.body.appendChild(tip);
+      }
+      var rect = et.getBoundingClientRect();
+      tip.textContent = explain;
+      tip.style.display = "block";
+      tip.style.left = Math.min(rect.left, window.innerWidth - 330) + "px";
+      tip.style.top = (rect.bottom + 8) + "px";
+    }
+    return;
+  }
+
+});
+
+document.addEventListener("input", function(e) {
+  if (e.target.classList.contains("ws-slider")) {
+    var key = e.target.dataset.key;
+    var newVal = parseInt(e.target.value);
+    var w = initWeights();
+    var keys = Object.keys(w);
+    var others = keys.filter(function(k) { return k !== key; });
+    var otherTotal = 0;
+    for (var i = 0; i < others.length; i++) { otherTotal += w[others[i]]; }
+    if (otherTotal === 0) otherTotal = 1;
+    var remaining = 100 - newVal;
+    if (remaining < 0) remaining = 0;
+    var scale = remaining / otherTotal;
+    var sum = newVal;
+    for (var i = 0; i < others.length; i++) {
+      var k = others[i];
+      var v = i === others.length - 1 ? Math.round(remaining - (sum - newVal)) : Math.round(w[k] * scale);
+      if (v < 0) v = 0;
+      w[k] = v;
+      sum += v;
+      var span = document.getElementById("ws-val-" + k);
+      if (span) span.textContent = v + "%";
+    }
+    w[key] = newVal;
+    if (sum !== 100) {
+      var last = others[others.length - 1];
+      w[last] += (100 - sum);
+      var lastSpan = document.getElementById("ws-val-" + last);
+      if (lastSpan) lastSpan.textContent = w[last] + "%";
+    }
+    var slider = e.target;
+    var valSpan = document.getElementById("ws-val-" + key);
+    if (valSpan) valSpan.textContent = newVal + "%";
+    localStorage.setItem("babyname_weights", JSON.stringify(w));
+    // Re-render sliders to update visual positions
+    renderWeightSliders(w);
+  }
+});
+
+</script>
+</body>
+</html>
+
+
+

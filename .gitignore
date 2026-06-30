@@ -1,0 +1,12 @@
+node_modules/
+*.db-journal
+*.db-wal
+*.db-shm
+server_*.txt
+_*.cjs
+*.b64
+
+
+**/db/*.db
+
+*.log
